@@ -1,0 +1,15 @@
+{
+  "name": "typescript-design-patterns",
+  "version": "1.0.0",
+  "description": "",
+  "license": "ISC",
+  "author": "slackermorris",
+  "type": "module",
+  "main": "index.ts",
+  "scripts": {
+    "test": "node --test"
+  },
+  "dependencies": {
+    "@types/node": "^25.0.3"
+  }
+}
