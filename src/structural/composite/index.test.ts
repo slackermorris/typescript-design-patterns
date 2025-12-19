@@ -3,7 +3,33 @@ import { strict as assert } from "node:assert";
 import { Box, Product } from "./index.ts";
 
 describe("composite pattern", () => {
-  test.todo("only Boxes have child management operations exposed on them");
+  describe("child management operations", () => {
+    test('returns a null pointer when determining if Product is a "composite" class', () => {
+      const product = new Product();
+
+      assert.equal(product.getBox(), 0);
+    });
+
+    test('returns an instance of Box when determining if Box is a "composite" class', () => {
+      const box = new Box();
+
+      assert.equal(box.getBox(), box);
+    });
+
+    test("only Boxes have child management operations exposed on them", () => {
+      const product = new Product();
+
+      // @ts-expect-error - Product does not have add and remove operations
+      assert.equal(product.add, undefined);
+      // @ts-expect-error - Product does not have add and remove operations
+      assert.equal(product.remove, undefined);
+
+      const box = new Box();
+
+      assert(typeof box.add === "function");
+      assert(typeof box.remove === "function");
+    });
+  });
 
   describe("accessing children", () => {
     test("never returns children for a Product", () => {
