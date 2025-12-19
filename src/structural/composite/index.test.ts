@@ -29,6 +29,32 @@ describe("composite pattern", () => {
       assert(typeof box.add === "function");
       assert(typeof box.remove === "function");
     });
+
+    test("Box can add children", () => {
+      const box = new Box();
+      const productToAdd = new Product();
+
+      box.add(productToAdd);
+      assert.strictEqual(box.getChild(0), productToAdd);
+    });
+
+    test("Box can remove children", () => {
+      const box = new Box();
+      const productToAdd = new Product();
+
+      box.add(productToAdd);
+      assert.strictEqual(box.getChild(0), productToAdd);
+
+      box.remove(productToAdd);
+      assert.strictEqual(box.getChild(0), undefined);
+    });
+
+    test("does not fail if Box tries to remove a child that does not exist", () => {
+      const box = new Box();
+      const productToRemove = new Product();
+
+      assert.doesNotThrow(() => box.remove(productToRemove));
+    });
   });
 
   describe("accessing children", () => {
