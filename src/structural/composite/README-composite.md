@@ -30,6 +30,8 @@ component class can usually provide default implementations of the common operat
 
 class hierarchy design = class only define operations that are meaningful to its sub classes. 
 
+composite objects always delegate to their children 
+
 
 ## Design Decisions
 
@@ -42,3 +44,10 @@ This way we can query a component to see if it is a composite. We can perform ad
 Maximised the component interface by having accessing children operations defined on the root Component class. But then management operations I scoped to the Box component? This seems like a bit of a conflict. Then composite classes will reimplment the logic for child access functions. 
 
 This is the difference in how I approached accessing the children versus managing the children. 
+
+
+
+## TODO
+
+- [ ] Make composite class delete its children from memory when it itself is destroyed. 
+- [ ] The indexOf logic for deleting does not seem reliable. 

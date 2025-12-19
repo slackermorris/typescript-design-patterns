@@ -6,6 +6,8 @@ export abstract class Component {
   public getChild(index: number): Component | void {
     return;
   }
+
+  public abstract operation(): string;
 }
 
 export class Box extends Component {
@@ -27,6 +29,14 @@ export class Box extends Component {
     const componentIndex = this.children.indexOf(component);
     this.children.splice(componentIndex, 1);
   }
+
+  public operation() {
+    return "Box";
+  }
 }
 
-export class Product extends Component {}
+export class Product extends Component {
+  public operation() {
+    return "Product";
+  }
+}

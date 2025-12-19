@@ -91,4 +91,18 @@ describe("composite pattern", () => {
       assert.equal(box.getChild(legitimateChildIndex), productInsideBox);
     });
   });
+
+  describe("component operations", () => {
+    test("Box returns a string when performing an operation", () => {
+      const box = new Box();
+
+      assert(typeof box.operation() === "string");
+    });
+
+    test("Product returns a string when performing an operation", () => {
+      const product = new Product();
+
+      assert(typeof product.operation() === "string");
+    });
+  });
 });
