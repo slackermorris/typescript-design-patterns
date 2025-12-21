@@ -40,7 +40,3 @@ export class Product extends Component {
     return "Product";
   }
 }
-
-
-const product = new Product();
-const child = product.getChild(0); 

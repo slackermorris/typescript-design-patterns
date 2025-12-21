@@ -171,8 +171,6 @@ export class Product extends Component {
 }
 ```
 
-
-
 ## TODO
 
 - [ ] Make composite class delete its children from memory when it itself is destroyed.
