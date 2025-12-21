@@ -13,11 +13,11 @@ export abstract class Component {
 export class Box extends Component {
   protected children: Array<Component> = [];
 
-  getBox() {
+  public getBox() {
     return this;
   }
 
-  getChild(index: number) {
+  public getChild(index: number) {
     return this.children[index];
   }
 
@@ -40,3 +40,7 @@ export class Product extends Component {
     return "Product";
   }
 }
+
+
+const product = new Product();
+const child = product.getChild(0); 
