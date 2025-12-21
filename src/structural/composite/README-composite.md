@@ -4,9 +4,9 @@
 
 The Composite Pattern is used to compose objects into tree structures to represent part-whole hierarchies[^1]. Some objects are individual (_primitives_ or _leaves_), while some are _composite_ or _containers_ and contain collections of other objects, themselves composite or individual.
 
-The benefit of this pattern is that clients interact with a common interface and therefore do not have to be aware of there being different types of objects. The pattern handles this complexity. Clients do not have to make a distinction when handling these objects—they treat them uniformly as they share the same interface.
+The benefit of this pattern is that clients interact with a common interface and therefore do not have to be aware of different object types. The pattern handles this complexity—clients treat all objects uniformly as they share the same interface.
 
-The pattern achieves this by leveraging a common interface and class inheritance. Objects inherit from a common ancestor and therefore make use of the same interface.
+This is achieved through class inheritance: objects inherit from a common ancestor and therefore expose the same interface to clients.
 
 ## When to Use
 
@@ -80,9 +80,9 @@ _This scenario is adapted from [Refactoring Guru's Composite Pattern](https://re
 
 ## Implementation
 
-There are some important design decisions worth drawing attention to. The main tension is between how we minimise how much the client needs to know when handling these objects, the _transparency_, and what constitutes good class hierarchy design. This tension plays out most notably when considering how we access and manage children for composite objects.
+There are some important design decisions worth drawing attention to. The main tension is between _transparency_—how little the client needs to know when handling these objects—and what constitutes good class hierarchy design. This tension plays out most notably when considering how we access and manage children for composite objects.
 
-As has been mentioned, one of the main motivations for using the Composite pattern is to simplify our clients. Its purpose is to minimise the amount of knowledge clients need when handling these objects, as they can treat them uniformly given they inherit from a common ancestor. This simplifies the accommodations needed in client code. If we follow this as intended behaviour, it needs to be reflected in our design. This is why we try to maximise the Component interface[^3].
+As mentioned, one of the main motivations for using the Composite pattern is to simplify our clients. The goal is to minimise the knowledge clients need when handling these objects, as they can treat them uniformly given they inherit from a common ancestor. This simplifies the accommodations needed in client code. If we follow this as intended behaviour, it needs to be reflected in our design—which is why we try to maximise the Component interface[^3].
 
 ### Maximising the Component Interface
 
@@ -100,11 +100,11 @@ export abstract class Component {
 }
 ```
 
-However, there is tension here. A principle of class hierarchy design is that classes only define operations that are meaningful to their subclasses[^3]. Product objects are childless by their nature. They therefore have no use for any child related operations. So, how do we achieve a balance?
+However, there is tension here. A principle of class hierarchy design is that classes only define operations that are meaningful to their subclasses[^3]. Product objects are childless by nature—they have no use for any child-related operations. So, how do we achieve a balance?
 
 ### Accessing Children Safely
 
-Accessing children state is a safe operation. We do not gain much in the way of safety if we expose it on our Product primitive. With a little creativity we can make it an operation defined as part of the Component interface, inheritable by both Box and Product classes. We provide a default implementation that is overridden by the Box composite class but kept intact for the Product primitive class.
+Accessing children is a safe operation—we do not gain much by hiding it from our Product primitive. With a little creativity, we can define it as part of the Component interface, inheritable by both Box and Product classes. We provide a default implementation that is overridden by the Box composite class but kept intact for the Product primitive.
 
 ```typescript
 export abstract class Component {
@@ -138,18 +138,18 @@ const box = new Box();
 box.getChild(childIndex); // Component | undefined
 ```
 
-With this we preserve the desired behaviour of making sure the client can ignore any difference between the supported classes.
+This preserves the desired behaviour: the client can ignore any difference between the supported classes.
 
 ### Managing Children: Transparency vs Safety
 
-Managing children is different as it involves mutating state. It is an inherently more risky operation, so safety becomes a top consideration. This is where the principle of class hierarchy design and choose to not supporting meaningless operations on the Product class (which does not support keeping children) becomes more prominent and where we make a choice against the intended design or benefit of the Composite pattern proper of not making the client have to be aware of distinguishing the different objects involved in the hierarchy.
+Managing children is different—it involves mutating state. This is an inherently riskier operation, so safety becomes a top consideration. Here the principle of class hierarchy design takes precedence: we choose not to support meaningless operations on the Product class, which cannot keep children. This is a deliberate choice against the intended benefit of the Composite pattern, as the client must now be aware of the distinction between different object types in the hierarchy.
 
 This is a trade-off between:
 
-- **Transparency**: Treating all components uniformly: the proposed benefit of this pattern.
-- **Safety**: Operations are defined (and implemented) only where they are applicable.
+- **Transparency**: Treating all components uniformly—the proposed benefit of this pattern.
+- **Safety**: Operations are defined and implemented only where they are applicable.
 
-Here we diverge from the previous design decision of maximising the Component interface:
+We diverge from the previous design decision of maximising the Component interface:
 
 ```typescript
 export abstract class Component {
@@ -178,9 +178,9 @@ export class Product extends Component {
 
 ### Type Discrimination with `getBox()`
 
-Because we are now supporting two different interfaces, we have lost transparency. At times we will lose type information of the objects we are using. We therefore need a way to distinguish between the different object types before taking an appropriate action—performing `add` or `remove` safely on the composite Box class.
+Because we are now supporting two different interfaces, we have lost transparency. At times we will lose type information of the objects we are working with. We therefore need a way to distinguish between object types before taking an appropriate action—performing `add` or `remove` safely on the composite Box class.
 
-We can achieve this by declaring a `getBox` operation on the Component interface which provides a default implementation that returns a null pointer (0), which is the implementation inherited by the Product primitive class. The Box class then redefines this operation to return itself through the `this` pointer.
+We achieve this by declaring a `getBox` operation on the Component interface. It provides a default implementation returning a null pointer (0), which the Product primitive inherits. The Box class redefines this to return itself via the `this` pointer.
 
 > **Note:** The `getBox` function does leak details of the concrete classes to the client, which is a compromise on transparency.
 
