@@ -1,6 +1,6 @@
 import { describe, test } from "node:test";
 import { strict as assert } from "node:assert";
-import { Box, Component, Product } from "./index.ts";
+import { Box, Product } from "./index.ts";
 
 describe("composite pattern", () => {
   describe("child management operations", () => {
