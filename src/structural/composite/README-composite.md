@@ -215,8 +215,8 @@ export class Product extends Component {
 ## TODO
 
 - [ ] Make composite class delete its children from memory when it itself is destroyed.
-- [ ] The `indexOf` logic for deleting does not seem reliable.
 - [ ] Create a complex test scenario of deeply nested structures.
+- [ ] Use a Map instead of an Array for storing the children on the Box object.
 
 ## References
 

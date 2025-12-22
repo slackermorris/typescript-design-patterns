@@ -1,6 +1,6 @@
 import { describe, test } from "node:test";
 import { strict as assert } from "node:assert";
-import { Box, Product } from "./index.ts";
+import { Box, Component, Product } from "./index.ts";
 
 describe("composite pattern", () => {
   describe("child management operations", () => {
@@ -54,6 +54,22 @@ describe("composite pattern", () => {
       const productToRemove = new Product();
 
       assert.doesNotThrow(() => box.remove(productToRemove));
+    });
+
+    test("fails to delete a child that is not referentially stable", () => {
+      const box = new Box();
+      const productToAdd = new Product();
+
+      // Add a product and confirm it exists as a child of the box.
+      box.add(productToAdd);
+      assert.strictEqual(box.getChild(0), productToAdd);
+
+      // Remove the product a copy of the product we just added.
+      const productToRemove: Product = Object.assign({}, productToAdd);
+      box.remove(productToRemove);
+
+      // Confirm that the deletion did not happen because the deletion logic depends on referential stability.
+      assert.strictEqual(box.getChild(0), productToAdd);
     });
   });
 

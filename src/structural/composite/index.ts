@@ -27,6 +27,10 @@ export class Box extends Component {
 
   public remove(component: Component) {
     const componentIndex = this.children.indexOf(component);
+    if (componentIndex == -1) {
+      return;
+    }
+
     this.children.splice(componentIndex, 1);
   }
 
