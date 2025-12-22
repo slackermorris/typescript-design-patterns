@@ -1,59 +1,84 @@
-abstract class Iterator {
-  public first(): void {
-    throw new Error("Method not implemented.");
-  }
-  public next(): void {
-    throw new Error("Method not implemented.");
-  }
-  public isDone(): boolean {
-    throw new Error("Method not implemented.");
-  }
-  public currentItem(): void {
-    throw new Error("Method not implemented.");
-  }
+interface Iterator<T> {
+  /**
+   * Positions the iterator to the first element by setting the current element as the first element in the collection.
+   */
+  first(): T;
+
+  /**
+   * Advance the current element to the next element.
+   */
+  next(): T;
+
+  /**
+   * Test whether we have advanced beyond the last element and so finished the traversal.
+   */
+  isDone(): boolean;
+
+  /**
+   * Return the current element in the collection.
+   */
+  currentItem(): T;
 }
 
-abstract class Aggregate {
-  public abstract getIterator(): Iterator;
+abstract class Aggregate<T> {
+  public abstract getIterator(): Iterator<T>;
+
+  public abstract append(item: T): void;
+
+  public abstract remove(item: T): void;
 }
 
-export class ListIterator implements Iterator {
-  protected collection: Collection;
+export class ListIterator<T> implements Iterator<T> {
+  private current: number;
+  protected collection: List<T>;
 
-  public constructor(collection: Collection) {
+  public constructor(collection: List<T>) {
+    this.current = 0;
     this.collection = collection;
   }
 
-  public first(): void {
-    throw new Error("Method not implemented.");
+  public first() {
+    this.current = 0;
+    return this.collection[this.current];
   }
-  public next(): void {
-    throw new Error("Method not implemented.");
+
+  public next() {
+    this.current++;
+    return this.collection[this.current];
   }
-  public isDone(): boolean {
-    throw new Error("Method not implemented.");
+
+  public currentItem() {
+    return this.collection[this.current];
   }
-  public currentItem(): void {
-    throw new Error("Method not implemented.");
+
+  public isDone() {
+    if (this.current < this.collection.getCount()) {
+      return false;
+    }
+    return true;
   }
 }
 
-export class Collection implements Aggregate {
-  protected items: Array<string> = [];
+export class List<T> implements Aggregate<T> {
+  protected items: Array<T> = [];
 
-  public add(item: string) {
+  public append(item: T) {
     this.items.push(item);
   }
 
-  public remove(item: string) {
+  public remove(item: T) {
     this.items.splice(this.items.indexOf(item), 1);
   }
 
-  public getItems(): Array<string> {
+  public getItems(): Array<T> {
     return this.items;
   }
 
-  public getIterator(): Iterator {
+  public getCount() {
+    return this.items.length;
+  }
+
+  public getIterator(): Iterator<T> {
     return new ListIterator(this);
   }
 }

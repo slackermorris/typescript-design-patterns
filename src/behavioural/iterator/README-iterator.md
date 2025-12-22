@@ -96,7 +96,8 @@ _This scenario is adapted from [Refactoring Guru's Composite Pattern](https://re
 
 ## TODO
 
-- [ ] 
+- [ ] The current variable for the Iterator should be typed as an index of an Array.
+- [ ] In ListIterator.next, check that the current position does not exceed the length of the collection.
 
 ## References
 
