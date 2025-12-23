@@ -48,11 +48,15 @@ export class ListIterator<T> implements Iterator<T> {
   }
 
   public currentItem() {
+    if (this.isDone()) {
+      throw new IteratorOutOfBoundsError();
+    }
     return this.collection.getItems()[this.current];
   }
 
   public isDone() {
-    if (this.current === this.collection.getCount() - 1) {
+    const collectionCount = this.collection.getCount();
+    if (Boolean(collectionCount) && this.current >= collectionCount - 1) {
       return true;
     }
     return false;
@@ -80,5 +84,12 @@ export class List<T> extends Aggregate<T> {
 
   public getIterator(): Iterator<T> {
     return new ListIterator(this);
+  }
+}
+
+export class IteratorOutOfBoundsError extends Error {
+  constructor(message = "The iteration has already terminated") {
+    super(message);
+    this.name = "IteratorOutOfBoundsError";
   }
 }

@@ -52,7 +52,7 @@ not entirely sure what I am trying to do here. I think i should implement an ite
 
 The Iterator pattern separates the traversal logic from the collection itself. The `Aggregate` (our `List`) holds the data, while the `Iterator` (our `ListIterator`) maintains the traversal state. This allows multiple iterators to traverse the same collection independently.
 
-```
+```ascii
                       ┌──────────────────────────────┐
                       │          List<T>             │
                       │  ┌───┬───┬───┬───┬───┬───┐   │
@@ -90,14 +90,26 @@ The iterator only has access to the data structure, the collection, through meth
 
 For this example we have implemeted an _external_ iterator where control of the iteration is managed by the client, in our case the tests.
 
+We define the traversal algorithim inside the concrete class iterator. The iterator stores the state of the iteration. Could the aggregate define the traversal algorithim? Yes. If it is defined in the Iterator then we will need a different Iterator for each algorithim we want. If the traversal algorithim needs to access private variables on the Aggregate then this will break encapsulation of the Aggregate. We sort of do this when we tap the `.getItems` call. 
+
+The Iterator concrete class keeps the concrete class state it is working on, the collection, in state so that it may interact with it for its traversal but importantly it does not have real access to the underlying data structure like, or maybe it does but it really shouldn't so maybe I need to look into this.
+
+the iterator and the aggregate are tightly coupled. 
+
+the iterator stores the Aggregate or Collection it was created from. 
+
 ## Key Principles
 
 - **Component classes can usually provide default implementations** of the common operations.
+- **Iterators make it easy to change the traversal algorithim used by an aggregate (data structure)** by simply replacing the iterator instance used.
+- **An Interators traversal interface removes the need to declare an equivalent interface on the Aggregate**.
 
 ## TODO
 
 - [ ] The current variable for the Iterator should be typed as an index of an Array.
 - [ ] In ListIterator.next, check that the current position does not exceed the length of the collection.
+- [ ] Implement an Iterator that does Depth First Search or Breadth First Search instead of just iterating over a list. 
+- [ ] Update the composite pattern to use an Iterator. Think about using NullIterators. 
 
 ## References
 

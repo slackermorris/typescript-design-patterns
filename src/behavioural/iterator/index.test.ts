@@ -1,6 +1,6 @@
 import { describe, test } from "node:test";
 import { strict as assert } from "node:assert";
-import { List } from "./index.ts";
+import { IteratorOutOfBoundsError, List } from "./index.ts";
 
 describe("iterator pattern", () => {
   describe("iterator", () => {
@@ -31,7 +31,7 @@ describe("iterator pattern", () => {
       });
     });
 
-    test("successfully traverses a collection", () => {
+    test("successfully traverses a collection", { only: true }, () => {
       const list = new List();
       const listIterator = list.getIterator();
       assert.strictEqual(listIterator.currentItem(), undefined);
@@ -54,6 +54,18 @@ describe("iterator pattern", () => {
       // Confirm we can move back to the first indexed item.
       assert.strictEqual(listIterator.first(), "First");
       assert.strictEqual(listIterator.isDone(), false);
+    });
+
+    test("throws an out-of-bounds error if the iteration has already terminated", () => {
+      const list = new List();
+      const listIterator = list.getIterator();
+
+      list.append("First");
+
+      listIterator.next();
+      
+      assert.strictEqual(listIterator.isDone(), true);
+      assert.throws(() => listIterator.currentItem(), IteratorOutOfBoundsError);
     });
   });
 });
