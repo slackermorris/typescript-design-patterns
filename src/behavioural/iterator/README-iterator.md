@@ -2,22 +2,18 @@
 
 ## Overview
 
-The Iterator Pattern is used 
+The Iterator Pattern is used
 
 extract bulky traversal algorithims from the client, business logic.
 
-can iterate over same collection in parallel because the iterator object contains its own iteration state. 
+can iterate over same collection in parallel because the iterator object contains its own iteration state.
 
- Intent: Lets you traverse elements of a collection without exposing its underlying representation (list, stack, tree, etc.).
+Intent: Lets you traverse elements of a collection without exposing its underlying representation (list, stack, tree, etc.).
 
- pg 257
- take responsibility for access and traversal out of the list object and put it into an iterator. this allows us to define iterators for different traversal policies without enumerating them all on the List interface. 
+pg 257
+take responsibility for access and traversal out of the list object and put it into an iterator. this allows us to define iterators for different traversal policies without enumerating them all on the List interface.
 
-
-not entirely sure what I am trying to do here. I think i should implement an iterator for a basic list. 
-
-
-
+not entirely sure what I am trying to do here. I think i should implement an iterator for a basic list.
 
 ## When to Use
 
@@ -28,71 +24,71 @@ not entirely sure what I am trying to do here. I think i should implement an ite
 ### Class Diagram
 
 ```
-┌─────────────────────────────────┐
-│      <<abstract>> Component     │
-├─────────────────────────────────┤
-│ + getBox(): Box | 0             │
-│ + getChild(index): Component    │
-│ + operation(): string {abstract}│
-└─────────────────────────────────┘
-              △
-              │
-    ┌─────────┴─────────┐
-    │                   │
-┌───┴───────────────┐  ┌┴──────────────┐
-│       Box         │  │    Product    │
-│    (Composite)    │  │   (Primitive) │
-├───────────────────┤  ├───────────────┤
-│ - children: []    │  │               │
-├───────────────────┤  ├───────────────┤
-│ + getBox(): this  │  │ + operation() │
-│ + getChild(i)     │  └───────────────┘
-│ + add(component)  │
-│ + remove(component)│
-│ + operation()     │
-└───────────────────┘
-        ◇
-        │ contains
-        ▼
-   Component[]
+┌──────────────────────────────┐      ┌─────────────────────────────────┐
+│    <<interface>> Iterator<T> │      │   <<abstract>> Aggregate<T>     │
+├──────────────────────────────┤      ├─────────────────────────────────┤
+│ + first(): T                 │      │ + getIterator(): Iterator<T>    │
+│ + next(): T                  │      │ + append(item: T): void         │
+│ + isDone(): boolean          │      │ + remove(item: T): void         │
+│ + currentItem(): T           │      └─────────────────────────────────┘
+└──────────────────────────────┘                      △
+              △                                       │
+              │ implements                            │ extends
+              │                                       │
+┌─────────────┴────────────────┐      ┌───────────────┴─────────────────┐
+│       ListIterator<T>        │      │            List<T>              │
+├──────────────────────────────┤      ├─────────────────────────────────┤
+│ - current: number            │◆────▶│ - items: Array<T>               │
+│ - collection: List<T>        │      ├─────────────────────────────────┤
+├──────────────────────────────┤      │ + append(item: T): void         │
+│ + first(): T                 │      │ + remove(item: T): void         │
+│ + next(): T                  │      │ + getItems(): Array<T>          │
+│ + isDone(): boolean          │      │ + getCount(): number            │
+│ + currentItem(): T           │      │ + getIterator(): Iterator<T>    │
+└──────────────────────────────┘      └─────────────────────────────────┘
 ```
 
 ### Conceptual Object Structure
 
-Imagine we have two types of objects: Products and Boxes. A Box can contain several Products as well as a number of smaller Boxes. These little Boxes can also hold some Products or even smaller Boxes, and so on. It is worth noting that a Box delegates most of its work to its sub-elements, passing any request it receives recursively to all its children which it then processes the intermediate results of.
+The Iterator pattern separates the traversal logic from the collection itself. The `Aggregate` (our `List`) holds the data, while the `Iterator` (our `ListIterator`) maintains the traversal state. This allows multiple iterators to traverse the same collection independently.
 
 ```
-                    ┌─────────┐
-                    │   Box   │
-                    └────┬────┘
-          ┌──────────────┼──────────────┐
-          ▼              ▼              ▼
-     ┌─────────┐    ┌─────────┐    ┌─────────┐
-     │ Product │    │   Box   │    │ Product │
-     └─────────┘    └────┬────┘    └─────────┘
-                   ┌─────┴─────┐
-                   ▼           ▼
-              ┌─────────┐ ┌─────────┐
-              │ Product │ │   Box   │
-              └─────────┘ └────┬────┘
-                               │
-                               ▼
-                          ┌─────────┐
-                          │ Product │
-                          └─────────┘
+                      ┌──────────────────────────────┐
+                      │          List<T>             │
+                      │  ┌───┬───┬───┬───┬───┬───┐   │
+                      │  │ A │ B │ C │ D │ E │ F │   │
+                      │  └───┴───┴───┴───┴───┴───┘   │
+                      │    0   1   2   3   4   5     │
+                      └──────────────────────────────┘
+                                    ▲
+              ┌─────────────────────┼─────────────────────┐
+              │                     │                     │
+    ┌─────────┴─────────┐ ┌─────────┴─────────┐ ┌─────────┴─────────┐
+    │  ListIterator #1  │ │  ListIterator #2  │ │  ListIterator #3  │
+    │   current: 0      │ │   current: 2      │ │   current: 5      │
+    │   item: "A"       │ │   item: "C"       │ │   item: "F"       │
+    │   isDone: false   │ │   isDone: false   │ │   isDone: true    │
+    └───────────────────┘ └───────────────────┘ └───────────────────┘
+            │                     │                       │
+            ▼                     ▼                       ▼
+         first()              next()                  isDone()
+         next()            currentItem()
+      currentItem()
 
 Legend:
-  Box     = Composite (can contain children)
-  Product = Leaf (no children)
+  List         = Concrete Aggregate (holds the collection)
+  ListIterator = Concrete Iterator (maintains traversal state)
 ```
 
-_This scenario is adapted from [Refactoring Guru's Composite Pattern](https://refactoring.guru/design-patterns/composite)._
+_This scenario is adapted from [Refactoring Guru's Iterator Pattern](https://refactoring.guru/design-patterns/iterator)._
 
 ## Implementation
 
 The data structure is encapsulated in the concrete Aggregate class. In our case this is the List class which supports an Array collection.
 
 The iterator only has access to the data structure, the collection, through methods exposed by the collection class. See an example in how we isolate the current item.
+
+For this example we have implemeted an _external_ iterator where control of the iteration is managed by the client, in our case the tests.
 
 ## Key Principles
 
