@@ -2,28 +2,21 @@
 
 ## Overview
 
-The Iterator Pattern is used
+The Iterator Pattern is useful for traversing elements of a collections (stacks, lists, trees) without exposing the underlying representation when you want to keep separation between the algorithim you are using to traverse and the underlying data structure being traversed. Iterators can encapsulate bulky traversal algorithims neither requiring the client to write them and include them in its business logic or have the collection itself declare these members on it.
 
-extract bulky traversal algorithims from the client, business logic.
+It allows iteration over the same collection to happen in parallel because the iterator is isolated and contains its own iteration state. take responsibility for access and traversal out of the list object and put it into an iterator. this allows us to define iterators for different traversal policies without enumerating them all on the List interface ^[1].
 
-can iterate over same collection in parallel because the iterator object contains its own iteration state.
-
-Intent: Lets you traverse elements of a collection without exposing its underlying representation (list, stack, tree, etc.).
-
-pg 257
-take responsibility for access and traversal out of the list object and put it into an iterator. this allows us to define iterators for different traversal policies without enumerating them all on the List interface.
-
-not entirely sure what I am trying to do here. I think i should implement an iterator for a basic list.
 
 ## When to Use
 
 - When the collection you are working with has a complex data structure under the hood and you want to hide its complexity from clients. This approach protects the collection from careless or malicious actions which the client would be able to perform on the collection directly ^[1].
+- When you want to support variations of traversal behaviour (algorithms) of the aggregate.
 
 ## Structure
 
 ### Class Diagram
 
-```
+```ascii
 ┌──────────────────────────────┐      ┌─────────────────────────────────┐
 │    <<interface>> Iterator<T> │      │   <<abstract>> Aggregate<T>     │
 ├──────────────────────────────┤      ├─────────────────────────────────┤
@@ -84,8 +77,6 @@ _This scenario is adapted from [Refactoring Guru's Iterator Pattern](https://ref
 
 ## Implementation
 
-The data structure is encapsulated in the concrete Aggregate class. In our case this is the List class which supports an Array collection.
-
 The iterator only has access to the data structure, the collection, through methods exposed by the collection class. See an example in how we isolate the current item.
 
 For this example we have implemeted an _external_ iterator where control of the iteration is managed by the client, in our case the tests.
@@ -94,9 +85,21 @@ We define the traversal algorithim inside the concrete class iterator. The itera
 
 The Iterator concrete class keeps the concrete class state it is working on, the collection, in state so that it may interact with it for its traversal but importantly it does not have real access to the underlying data structure like, or maybe it does but it really shouldn't so maybe I need to look into this.
 
+because the concrete implementation of the aggregate handles the collection, it makes sense to declare member functions we expect as part of the Aggregate interface like append and remove. 
+
 the iterator and the aggregate are tightly coupled. 
 
 the iterator stores the Aggregate or Collection it was created from. 
+
+
+
+
+Implement concrete iterator classes for the collections that you want to be traversable with iterators. An iterator object must be linked with a single collection instance. Usually, this link is established via the iterator’s constructor.
+
+Implement the collection interface in your collection classes. The main idea is to provide the client with a shortcut for creating iterators, tailored for a particular collection class. The collection object must pass itself to the iterator’s constructor to establish a link between them.
+
+Go over the client code to replace all of the collection traversal code with the use of iterators. The client fetches a new iterator object each time it needs to iterate over the collection elements.
+
 
 ## Key Principles
 
@@ -110,7 +113,9 @@ the iterator stores the Aggregate or Collection it was created from.
 - [ ] In ListIterator.next, check that the current position does not exceed the length of the collection.
 - [ ] Implement an Iterator that does Depth First Search or Breadth First Search instead of just iterating over a list. 
 - [ ] Update the composite pattern to use an Iterator. Think about using NullIterators. 
+- [ ] Give an illustration of the flexibility of the pattern. Define another iterator. 
 
 ## References
 
-[^1]: [Refactoring Guru Iterator Pattern](https://refactoring.guru/design-patterns/iterator).
+[^1]: Design Patterns: Elements of Reusable Object-Oriented Software, page 257.
+[^2]: [Refactoring Guru Iterator Pattern](https://refactoring.guru/design-patterns/iterator).
