@@ -90,6 +90,10 @@ _This scenario is adapted from [Refactoring Guru's Composite Pattern](https://re
 
 ## Implementation
 
+The data structure is encapsulated in the concrete Aggregate class. In our case this is the List class which supports an Array collection.
+
+The iterator only has access to the data structure, the collection, through methods exposed by the collection class. See an example in how we isolate the current item.
+
 ## Key Principles
 
 - **Component classes can usually provide default implementations** of the common operations.

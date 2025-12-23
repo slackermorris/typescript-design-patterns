@@ -39,27 +39,27 @@ export class ListIterator<T> implements Iterator<T> {
 
   public first() {
     this.current = 0;
-    return this.collection[this.current];
+    return this.collection.getItems()[this.current];
   }
 
   public next() {
     this.current++;
-    return this.collection[this.current];
+    return this.collection.getItems()[this.current];
   }
 
   public currentItem() {
-    return this.collection[this.current];
+    return this.collection.getItems()[this.current];
   }
 
   public isDone() {
-    if (this.current < this.collection.getCount()) {
-      return false;
+    if (this.current === this.collection.getCount() - 1) {
+      return true;
     }
-    return true;
+    return false;
   }
 }
 
-export class List<T> implements Aggregate<T> {
+export class List<T> extends Aggregate<T> {
   protected items: Array<T> = [];
 
   public append(item: T) {
