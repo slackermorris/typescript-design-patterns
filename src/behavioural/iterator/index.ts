@@ -1,4 +1,4 @@
-interface Iterator<T> {
+export interface Iterator<T> {
   /**
    * Positions the iterator to the first element by setting the current element as the first element in the collection.
    */
@@ -20,7 +20,7 @@ interface Iterator<T> {
   currentItem(): T;
 }
 
-abstract class Aggregate<T> {
+export abstract class Aggregate<T> {
   public abstract getIterator(): Iterator<T>;
 
   public abstract append(item: T): void;

@@ -6,6 +6,8 @@ The Iterator Pattern is useful for traversing elements of a collections (stacks,
 
 It allows iteration over the same collection to happen in parallel because the iterator is isolated and contains its own iteration state. take responsibility for access and traversal out of the list object and put it into an iterator. this allows us to define iterators for different traversal policies without enumerating them all on the List interface ^[1].
 
+The Iterator pattern captures these techniques for supporting access and traversal over object structures. It is applicable to composite structures and collections as well. It abstracts the traversal algorithm and shields clients from the internal structure of the objects they traverse. This illustrates how encapsulating the concept that varies helps us gain flexibility and reusability.
+
 
 ## When to Use
 
