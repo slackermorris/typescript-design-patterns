@@ -10,12 +10,12 @@ export abstract class Component {
   public abstract netPrice(): number;
 }
 
-export abstract class Aggregate {
-  public abstract getIterator(): Iterator;
+export interface Aggregate {
+  getIterator(): Iterator;
 
-  public abstract append(item: unknown): void;
+  append(item: unknown): void;
 
-  public abstract remove(item: unknown): void;
+  remove(item: unknown): void;
 }
 
 export interface Iterator {
@@ -40,14 +40,10 @@ export interface Iterator {
   currentItem(): unknown;
 }
 
-export interface CompositeComponentSupportingIteration
-  extends Component,
-    Aggregate {}
-
 /**
  * A concrete class that implements the interfaces of both the Composite (Component) and Iterator (Aggregate) class patterns.
  */
-export class Box implements CompositeComponentSupportingIteration {
+export class Box extends Component implements Aggregate {
   protected children: Array<Component> = [];
 
   public getBox() {
