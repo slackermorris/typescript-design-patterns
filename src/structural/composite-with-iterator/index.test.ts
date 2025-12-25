@@ -1,6 +1,6 @@
 import { describe, test } from "node:test";
 import { strict as assert } from "node:assert";
-import { Box, NullIterator, Product } from "./composite-with-iterator.ts";
+import { Box, NullIterator, Product } from "./index.ts";
 
 describe("composite with iterator pattern", () => {
   test("successfully calculates the total price of a Box containing a single Product", () => {
