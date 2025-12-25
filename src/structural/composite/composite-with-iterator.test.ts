@@ -1,6 +1,6 @@
 import { describe, test } from "node:test";
 import { strict as assert } from "node:assert";
-import { Box, Product } from "./composite-with-iterator.ts";
+import { Box, NullIterator, Product } from "./composite-with-iterator.ts";
 
 describe("composite with iterator pattern", () => {
   test("successfully calculates the total price of a Box containing a single Product", () => {
@@ -46,5 +46,10 @@ describe("composite with iterator pattern", () => {
     const totalNetPrice = bigBox.netPrice();
 
     assert.strictEqual(totalNetPrice, 80);
+  });
+
+  test("Product should have a null iterator", () => {
+    const product = new Product();
+    assert.strictEqual(product.getIterator() instanceof NullIterator, true);
   });
 });

@@ -7,6 +7,10 @@ export abstract class Component {
     return;
   }
 
+  public getIterator(): Iterator {
+    return new NullIterator();
+  }
+
   public abstract netPrice(): number;
 }
 

@@ -2,11 +2,14 @@
 
 ## Overview
 
-In the Composite pattern the Composite class contains collections of other objects of the same interface. It is therefore the responsibility of this class to manage access to its children and all the children that are recursively nested below it. Access to children is expressed as traversal logic or algorithm. Sometimes this logic can be complicated and can distract from the intention or responsibility of this Composite class. It can therefore be of benefit to introduce or combine the Composite pattern with the Iterator pattern and use an Iterator to manage the traversal logic used by the Composite class to access its children.
+The Composite class holds collections of other objects. It must manage access to its children—and all children nested recursively below. This access is expressed as traversal logic. When this logic becomes complex, it can distract from the Composite's core responsibility.
+
+The solution: combine the Composite pattern with the Iterator pattern. Let an Iterator handle the traversal, keeping the Composite class focused on its primary job.
 
 ## When to Use
 
-- When the traversal algorithm used to access children on the Composite class is either complicated or as a concept varies the most (e.g., most of the access can be achieved as a simple list traversal or we want to leverage the performance accuracy of a breadth first search) can benefit most from being encapsulated.
+- When the traversal algorithm is complex or likely to vary (e.g., switching between list traversal, depth-first search, or breadth-first search). The principle at work is to encapsulate the concept most likely to vary. For us, this is the mechanism of traversal.
+- When you want to swap traversal strategies without modifying the Composite class.
 
 ## Structure
 
@@ -18,7 +21,8 @@ In the Composite pattern the Composite class contains collections of other objec
 ├─────────────────────────────────┤      ├──────────────────────────────┤
 │ + getBox(): Box | 0             │      │ + getIterator(): Iterator    │
 │ + getChild(index): Component    │      │ + append(item): void         │
-│ + netPrice(): number {abstract} │      │ + remove(item): void         │
+│ + getIterator(): Iterator       │      │ + append(item): void         │
+│ + netPrice(): number {abstract} │      │                              │
 └─────────────────────────────────┘      └──────────────────────────────┘
               △                                       △
               │ extends                               │ implements
@@ -78,7 +82,7 @@ In the Composite pattern the Composite class contains collections of other objec
 
 ### Conceptual Object Structure
 
-When a Box (composite) needs to calculate its `netPrice`, it delegates to an Iterator to traverse its children. The Iterator encapsulates the traversal algorithm, allowing the Box to focus on its core responsibility of aggregating results. Each Box creates its own iterator, enabling nested traversals.
+When a Box calculates its `netPrice`, it delegates traversal to an Iterator. The Iterator walks through children while the Box aggregates results. Each Box creates its own iterator, enabling independent nested traversals.
 
 ```ascii
                     ┌─────────────────────────────────────┐
@@ -118,11 +122,13 @@ _This combines the Composite pattern structure with the Iterator pattern for tra
 
 ## Implementation
 
-The most important conceptual join is that the Composite class from the [Composite pattern]('./README-composite.md') is now also the Aggregate class from the [Iterator pattern]('../../../../behavioural/iterator/README-iterator.md'). Fundamentally, The aggregate class (collection) holds the collection of items and provides an iterator for traversal.
+The key insight: the Composite class becomes the Aggregate class. The [Box from the Composite pattern](./README-composite.md) now also implements the [Aggregate interface from the Iterator pattern](../../behavioural/iterator/README-iterator.md). It holds the collection and provides an iterator for traversal.
 
-For our use case, we want to be able to calculate the net price of a Box. Remember, a Box may contain Products which have a definite price ($20) or other Boxes that themselves contain either more Boxes or Products. So, calculating the total in any one Box becomes an exercise in traversing all children and adding the cost of all Products up. Say something about delegating the work of computing the cost to the outermost primitives, the Products, in our graph of objects. We could achieve this functionality by declaring it in the Box class, but it is better to encapsulate it so we may have greater flexibility in what method or approach we take to traversal by using an Iterator.
+### Example: Calculating Net Price
 
-To first change we introduce is extending the common Component interface for the Composite classes by adding a `netPrice` method.
+A Box may contain Products (with a fixed price of $20) or other Boxes. To calculate the total price, we must traverse all children recursively and sum up the Product prices. Rather than embedding traversal logic directly in the Box class, we delegate it to an Iterator—and delegate price computation to sub-elements. This gives us flexibility to change traversal strategies later.
+
+First, we extend the Component interface with a `netPrice` method:
 
 ```typescript
 abstract class Component {
@@ -132,13 +138,15 @@ abstract class Component {
 }
 ```
 
-Next, we diverge a little from how we implemented the Composite pattern where methods for managing the children on the Composite object were `add` and `remove`. We preserve declaring the methods on the class where they are relevant, of prioritising safety over transparency, but we change their signature to reflect what is used by the Aggregate class and our Iterator pattern to be the more generic `append` and `remove`. In addition to this the Box now exposes a `getIterator` function which matches the interface and responsibility of the Aggregate interface. This design decision is in line with what I chose as outlined in [Composite Pattern > Managing Children]('./README-composite.md')
+### Box as Composite + Aggregate
+
+Next, we update the concrete Composite class, Box, to match the Aggregate interface. The design decision prioritises safety over transparency, as outlined in the [Composite pattern](./README-composite.md)—child management methods (`append`, `remove`) are defined where they are meaningful. We rename `add` to `append` to match the Aggregate interface and add a `getIterator` method.
 
 ```typescript
 class Box extends Component implements Aggregate {
   protected children: Array<Component> = [];
 
-  //   <COMPOSITE_METHODS>...
+  // ... Composite methods ...
 
   public append(component: Component) {}
 
@@ -150,13 +158,15 @@ class Box extends Component implements Aggregate {
 }
 ```
 
-In the Iterator pattern, the `getIterator` function exposes an external iterator that can be used by the client, whereever the class is instantiated, to traverse the collection, the data structure, contained by the Aggregate class. In combining the two patterns, we don't actually make use of exposing the iterator like this. Instead, this method is called from inside of the Box class in the netPrice method. In fact, it feels a little strange and leaky to have the client write logic specific to using the iterator so I don't know exatly why we expose the `getIterator` function externally. Anyway, now that our Composite class supports the signature and behaviour of the Iterator Aggregate class, we can make use of an iterator to compute the total price of items inside a given Box and the nested children (Boxes and Products) below it^[1].
+### Using the Iterator Internally
+
+In the standard Iterator pattern, `getIterator` exposes an external iterator for clients. However, exposing the iterator here feels leaky—we only use it internally within the Composite/Aggregate class to calculate `netPrice`. Although not strictly an internal iterator, the Box class creates and consumes its own iterator through the `netPrice` method. This keeps traversal logic encapsulated within the Box[^1]:
 
 ```typescript
 class Box extends Component implements Aggregate {
   protected children: Array<Component> = [];
 
-  //   <COMPOSITE_METHODS>...
+  // ... Composite methods ...
 
   public append(component: Component) {}
 
@@ -182,9 +192,9 @@ class Box extends Component implements Aggregate {
 }
 ```
 
-### Accessing Children: Transparency vs Safety
+### Default Iterator: The NullIterator
 
-Similar to the design decision we made in the Composite pattern, here we have chosen to prioritise maximising the component interface, the common root interface used by the Composite pattern classes, and maximise transparency so clients of the classes do not need to worry or accommodate there being a difference and we provide a default implementation of the `getIterator` method. Again, this default implementation will be used by the primitive Product class, and the container Box class will override it and provide it own implementation.
+To maximise the Component interface, we provide a default `getIterator` implementation. The Product class inherits a `NullIterator`—an iterator that's always done. The Box class overrides this to return a real `ListIterator`. Because the iterator deals with accessing children, defining this method on the Component interface is consistent with the design decision we made when constructing the Composite pattern: prioritise maximising the component interface and client transparency for safe operations. There is some tension here that needs to be resolved, see the TODO list.
 
 ```typescript
 abstract class Component {
@@ -206,12 +216,15 @@ abstract class Component {
 
 ## Key Principles
 
--
+- **The Composite becomes the Aggregate**: The container class (Box) implements both Component and Aggregate interfaces.
+- **Traversal is encapsulated**: The Iterator handles how children are visited; the Composite handles what to do with them.
+- **NullIterator for primitives**: Leaf nodes return a NullIterator, maintaining interface uniformity without special-case logic.
 
 ## TODO
 
 - [ ] Does the Iterator concrete class depend on the Aggregate concrete class exposing member functions like getItems and getCount?
 - [ ] Add TS generic support
+- [ ] Resolve tension in base classes. Component defines `getIterator`, but so does the Aggregate class. Component should implement Aggregate, but there are methods for managing children that we only want to declare on the class that they are meaningful: the concrete Composite class.
 
 ## References
 
