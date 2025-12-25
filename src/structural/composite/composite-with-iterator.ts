@@ -140,6 +140,12 @@ export class ListIterator implements Iterator {
 
   public isDone() {
     const collectionCount = this.collection.getCount();
+
+    // There is nothing in the collection. We have not finished iterating.
+    if (this.current == 0 && collectionCount == 0) {
+      return false;
+    }
+
     if (this.current >= collectionCount) {
       return true;
     }

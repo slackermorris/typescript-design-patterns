@@ -222,7 +222,6 @@ abstract class Component {
 
 ## TODO
 
-- [ ] Does the Iterator concrete class depend on the Aggregate concrete class exposing member functions like getItems and getCount?
 - [ ] Add TS generic support
 - [ ] Resolve tension in base classes. Component defines `getIterator`, but so does the Aggregate class. Component should implement Aggregate, but there are methods for managing children that we only want to declare on the class that they are meaningful: the concrete Composite class.
 

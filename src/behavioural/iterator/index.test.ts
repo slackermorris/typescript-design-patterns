@@ -26,12 +26,11 @@ describe("iterator pattern", () => {
         assert.strictEqual(listIterator.currentItem(), undefined);
 
         list.append("First");
-
         assert.strictEqual(listIterator.currentItem(), "First");
       });
     });
 
-    test("successfully traverses a collection", { only: true }, () => {
+    test("successfully traverses a collection", () => {
       const list = new List();
       const listIterator = list.getIterator();
       assert.strictEqual(listIterator.currentItem(), undefined);
@@ -49,7 +48,12 @@ describe("iterator pattern", () => {
       // Confirm we move to the final indexed item.
       const lastInList = listIterator.next();
       assert.strictEqual(lastInList, "Third");
-      assert.strictEqual(listIterator.isDone(), true);
+      assert.strictEqual(listIterator.isDone(), false);
+
+      // Confirm we have finished traversing the list.
+      const endOfList = listIterator.next();
+      assert.strictEqual(endOfList, undefined);
+      assert.throws(() => listIterator.currentItem(), IteratorOutOfBoundsError);
 
       // Confirm we can move back to the first indexed item.
       assert.strictEqual(listIterator.first(), "First");
@@ -63,7 +67,7 @@ describe("iterator pattern", () => {
       list.append("First");
 
       listIterator.next();
-      
+
       assert.strictEqual(listIterator.isDone(), true);
       assert.throws(() => listIterator.currentItem(), IteratorOutOfBoundsError);
     });

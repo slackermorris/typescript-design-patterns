@@ -56,7 +56,13 @@ export class ListIterator<T> implements Iterator<T> {
 
   public isDone() {
     const collectionCount = this.collection.getCount();
-    if (Boolean(collectionCount) && this.current >= collectionCount - 1) {
+
+    // There is nothing in the collection. We have not finished iterating.
+    if (this.current == 0 && collectionCount == 0) {
+      return false;
+    }
+
+    if (this.current >= collectionCount) {
       return true;
     }
     return false;
