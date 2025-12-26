@@ -1,6 +1,6 @@
 import { describe, test } from "node:test";
 import { strict as assert } from "node:assert";
-import { Box, NullIterator, Product } from "./index.ts";
+import { Box, Component, NullIterator, Product } from "./index.ts";
 
 describe("composite with iterator pattern", () => {
   /**
@@ -106,6 +106,26 @@ describe("composite with iterator pattern", () => {
     });
 
     test("algorithm is broken because it uses recursion", () => {
+      class BoxWithBrokenBFSIterator extends Box {
+        /**
+         * This is the broken implementation that uses recursion with BFS.
+         * It calls netPrice() on every item without checking if it's a leaf node,
+         * which causes double-counting when combined with the BFS iterator.
+         */
+        public override netPrice() {
+          const iterator = this.getIterator();
+
+          let totalNetPrice = 0;
+
+          for (iterator.first(); !iterator.isDone(); iterator.next()) {
+            const nextItem = iterator.currentItem() as Component;
+            totalNetPrice += nextItem.netPrice();
+          }
+
+          return totalNetPrice;
+        }
+      }
+
       /**
        * Structure being tested:
        *
@@ -118,8 +138,14 @@ describe("composite with iterator pattern", () => {
        *
        */
 
-      const bigBox = new Box("big box", "breadth-first-search");
-      const mediumBox = new Box("medium box", "breadth-first-search");
+      const bigBox = new BoxWithBrokenBFSIterator(
+        "big box",
+        "breadth-first-search"
+      );
+      const mediumBox = new BoxWithBrokenBFSIterator(
+        "medium box",
+        "breadth-first-search"
+      );
 
       const product = new Product("small box product one");
       const product2 = new Product("small box product two");
@@ -132,8 +158,7 @@ describe("composite with iterator pattern", () => {
       bigBox.append(product3);
       bigBox.append(product4);
 
-      const totalNetPrice =
-        bigBox.netPriceWithBrokenBreadthFirstSearchTraversal();
+      const totalNetPrice = bigBox.netPrice();
 
       /**
        * We get 120 because we double handle the "nodes". This is how the traversal works:
@@ -157,5 +182,67 @@ describe("composite with iterator pattern", () => {
        */
       assert.strictEqual(totalNetPrice, 120);
     });
+
+    test("BFS iterator should report expected node visit pattern", () => {
+      /**
+       * Structure being tested:
+       *
+       *                      📦 Big Box (A)
+       *                          │
+       *            ┌─────────────┼─────────────┐
+       *            │             │             │
+       *      📦 Medium Box (B)  🏷️ Product (C)  🏷️ Product (D)
+       *            │          ($20)        ($20)
+       *            │
+       *      📦 Small Box (E)
+       *            │
+       *       ┌────┴────┐
+       *       │         │
+       *  🏷️ Product (F)  🏷️ Product (G)
+       *     ($20)      ($20)
+       *
+       *  Total: $80 (4 products × $20)
+       */
+
+      const bigBoxA = new Box("A", "breadth-first-search");
+      const mediumBoxB = new Box("B", "breadth-first-search");
+      const smallBoxE = new Box("E", "breadth-first-search");
+
+      const productF = new Product("F");
+      const productG = new Product("G");
+      const productC = new Product("C");
+      const productD = new Product("D");
+
+      smallBoxE.append(productF);
+      smallBoxE.append(productG);
+      mediumBoxB.append(smallBoxE);
+      bigBoxA.append(mediumBoxB);
+      bigBoxA.append(productC);
+      bigBoxA.append(productD);
+
+      const bfsIterator = bigBoxA.getIterator();
+
+      let visitedNodes = "";
+      while (!bfsIterator.isDone()) {
+        const currentItem = bfsIterator.currentItem() as Component;
+        visitedNodes += currentItem.getName() + " ";
+        bfsIterator.next();
+      }
+
+      assert.strictEqual(visitedNodes.trim(), "B C D E F G");
+    });
+
+    test.todo(
+      "BFS iterator first method should return the first item in the collection"
+    );
+    test.todo(
+      "BFS iterator next method should return the next item in the collection"
+    );
+    test.todo(
+      "BFS iterator isDone method should return true if the iterator has reached the end of the collection"
+    );
+    test.todo(
+      "BFS iterator currentItem method should return the current item in the collection"
+    );
   });
 });

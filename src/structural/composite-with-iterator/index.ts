@@ -129,19 +129,6 @@ export class Box extends Component implements Aggregate {
 
     return totalNetPrice;
   }
-
-  public netPriceWithBrokenBreadthFirstSearchTraversal() {
-    const iterator = this.getIterator();
-
-    let totalNetPrice = 0;
-
-    for (iterator.first(); !iterator.isDone(); iterator.next()) {
-      const nextItem = iterator.currentItem() as Component;
-      totalNetPrice += nextItem.netPrice();
-    }
-
-    return totalNetPrice;
-  }
 }
 
 /**
