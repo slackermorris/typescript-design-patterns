@@ -11,6 +11,8 @@ export abstract class Component {
     return new NullIterator();
   }
 
+  public abstract getName();
+
   public abstract netPrice(): number;
 }
 
@@ -48,7 +50,21 @@ export interface Iterator {
  * A concrete class that implements the interfaces of both the Composite (Component) and Iterator (Aggregate) class patterns.
  */
 export class Box extends Component implements Aggregate {
+  private name: string;
   protected children: Array<Component> = [];
+  protected iteratorType: "breadth-first-search" | "depth-first-search" =
+    "depth-first-search";
+
+  constructor(
+    name,
+    iteratorType:
+      | "breadth-first-search"
+      | "depth-first-search" = "depth-first-search"
+  ) {
+    super();
+    this.name = name;
+    this.iteratorType = iteratorType;
+  }
 
   public getBox() {
     return this;
@@ -80,7 +96,13 @@ export class Box extends Component implements Aggregate {
   }
 
   public getIterator(): Iterator {
-    return new ListIterator(this);
+    return this.iteratorType === "breadth-first-search"
+      ? new LazyBreadthFirstSearchIterator(this)
+      : new ListIterator(this);
+  }
+
+  public getName() {
+    return this.name;
   }
 
   public netPrice() {
@@ -89,13 +111,35 @@ export class Box extends Component implements Aggregate {
     let totalNetPrice = 0;
 
     for (iterator.first(); !iterator.isDone(); iterator.next()) {
-      const nextItem = iterator.currentItem();
-      // @ts-ignore - [ ] Fix the typing to make use of generics.
-      totalNetPrice += nextItem.netPrice();
+      const nextItem = iterator.currentItem() as Component;
+
+      if (this.iteratorType === "breadth-first-search") {
+        // For BFS: avoid recursion and just iterate over queue only count prices from leaf nodes (Products), not containers (Boxes)
+        if (nextItem.getBox() === 0) {
+          totalNetPrice += nextItem.netPrice();
+        }
+      } else {
+        // For DFS: recursively add prices (the ListIterator only iterates direct children)
+        totalNetPrice += nextItem.netPrice();
+      }
     }
 
     // [ ] Be sure to clean up and delete the iterator.
     // delete iterator;
+
+    return totalNetPrice;
+  }
+
+  public netPriceWithBrokenBreadthFirstSearchTraversal() {
+    const iterator = this.getIterator();
+
+    let totalNetPrice = 0;
+
+    for (iterator.first(); !iterator.isDone(); iterator.next()) {
+      const nextItem = iterator.currentItem() as Component;
+      totalNetPrice += nextItem.netPrice();
+    }
+
     return totalNetPrice;
   }
 }
@@ -104,6 +148,15 @@ export class Box extends Component implements Aggregate {
  * A concrete class that inherits from the Component base class used in the Composite pattern.
  */
 export class Product extends Component {
+  private name: string;
+
+  constructor(name) {
+    super();
+    this.name = name;
+  }
+  public getName() {
+    return this.name;
+  }
   public netPrice() {
     return 20;
   }
@@ -150,6 +203,55 @@ export class ListIterator implements Iterator {
       return true;
     }
     return false;
+  }
+}
+
+/**
+ * A concrete class that defines a Breadth-First Search Iterator algorithm.
+ * Flattens the composite tree and traverses level by level.
+ */
+export class LazyBreadthFirstSearchIterator implements Iterator {
+  protected collection: Box;
+  private fifoQueue: Array<Component>;
+
+  // https://www.codecademy.com/article/breadth-first-search-bfs-algorithm
+
+  public constructor(collection: Box) {
+    this.collection = collection;
+
+    this.buildQueue();
+  }
+
+  private buildQueue() {
+    this.fifoQueue = [...this.collection.getItems()];
+  }
+
+  public first() {
+    this.buildQueue();
+    return this.fifoQueue[0];
+  }
+
+  public next() {
+    const nextElement = this.fifoQueue.shift();
+
+    if (nextElement != null) {
+      const nextElementAsBox = nextElement.getBox();
+      if (nextElementAsBox != 0) {
+        this.fifoQueue.push(...nextElementAsBox.getItems());
+      }
+
+      return nextElement;
+    }
+
+    return;
+  }
+
+  public currentItem() {
+    return this.fifoQueue[0];
+  }
+
+  public isDone() {
+    return this.fifoQueue.length === 0;
   }
 }
 

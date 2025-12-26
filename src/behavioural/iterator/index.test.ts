@@ -71,5 +71,17 @@ describe("iterator pattern", () => {
       assert.strictEqual(listIterator.isDone(), true);
       assert.throws(() => listIterator.currentItem(), IteratorOutOfBoundsError);
     });
+
+    test("supports breadth first search", { only: true }, () => {
+      const list = new List();
+      const listIterator = list.getIterator();
+
+      list.append("First");
+      list.append("Second");
+      list.append("Third");
+
+      // what do I need to support breadth first search?
+      // I need to be able to traverse the list in a breadth first manner.
+    });
   });
 });
