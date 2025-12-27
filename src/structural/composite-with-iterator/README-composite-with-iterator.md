@@ -82,7 +82,7 @@ The solution: combine the Composite pattern with the Iterator pattern. Let an It
 
 ### Conceptual Object Structure
 
-When a Box calculates its `netPrice`, it delegates traversal to an Iterator. The Iterator walks through children while the Box aggregates results. Each Box creates its own iterator, enabling independent nested traversals.
+When a Box calculates its `netPrice`, it delegates traversal to an Iterator. The Iterator walks through children while the Box aggregates results. Each Box creates its own iterator, enabling independent nested traversals. MENTION THAT I MAKE USE OF A BFS AND DFS TRAVERSAL ALGORITHM BECAUSE THE STRUCTURE WE PRODUCE IS GRAPH LIKE, THIS IS A CHARACTERISTIC OF COMPOSITE PATTERNS.
 
 ```ascii
                     ┌─────────────────────────────────────┐
@@ -224,6 +224,16 @@ abstract class Component {
 
 - [ ] Add TS generic support
 - [ ] Resolve tension in base classes. Component defines `getIterator`, but so does the Aggregate class. Component should implement Aggregate, but there are methods for managing children that we only want to declare on the class that they are meaningful: the concrete Composite class.
+- [ ] Mention how I had to use an iterator that made sense for the data structure we were using. We are using a graph and therefore it is silly to use a list collection and better to use a traversal algorithm that makes use of the graph model.
+- [ ] What is the difference in recursive and iterative DFS?
+
+there is a lot going on here. a lot of things that I learnt. for the specific data structure I was using I was wrongly trying to use a flat collection
+like an array and support traversal of a data structure that resembled a graph.. I should of thought about what sort of data structure I had because this is coupled to the Iterator and I would have realised that using a list collection iterator instead of a graph collection iterator did not make sense whatsoever.
+
+// https://www.codecademy.com/article/breadth-first-search-bfs-algorithm
+
+from this I will also notice that the implementation for getting the total price in the collection or aggregate did not need to change.. the traversal algorithm
+has changed but we, or the aggregate does not care about how the iterator is performing its traversal.. all it cares about is that we can walk the nodes and intermediate process the results for obtaining the total price of elements below a given composite Box. so, the body logic of "add to total if the element has a price" is appropriate in scope of this class.. the iterator is walking the data structure.. its responsibility is not to call methods on the elements it is walking. good separation of concerns is at play.
 
 ## References
 

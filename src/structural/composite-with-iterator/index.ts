@@ -11,7 +11,7 @@ export abstract class Component {
     return new NullIterator();
   }
 
-  public abstract getName();
+  public abstract getName(): string;
 
   public abstract netPrice(): number;
 }
@@ -98,7 +98,7 @@ export class Box extends Component implements Aggregate {
   public getIterator(): Iterator {
     return this.iteratorType === "breadth-first-search"
       ? new LazyBreadthFirstSearchIterator(this)
-      : new ListIterator(this);
+      : new LazyDepthFirstSearchIterator(this);
   }
 
   public getName() {
@@ -113,13 +113,7 @@ export class Box extends Component implements Aggregate {
     for (iterator.first(); !iterator.isDone(); iterator.next()) {
       const nextItem = iterator.currentItem() as Component;
 
-      if (this.iteratorType === "breadth-first-search") {
-        // For BFS: avoid recursion and just iterate over queue only count prices from leaf nodes (Products), not containers (Boxes)
-        if (nextItem.getBox() === 0) {
-          totalNetPrice += nextItem.netPrice();
-        }
-      } else {
-        // For DFS: recursively add prices (the ListIterator only iterates direct children)
+      if (!Boolean(nextItem.getBox())) {
         totalNetPrice += nextItem.netPrice();
       }
     }
@@ -150,46 +144,51 @@ export class Product extends Component {
 }
 
 /**
- * A concrete class that defines an Iterator algorithm.
+ * A concrete class that defines a Depth-First Search Iterator algorithm.
+ * Uses a stack (LIFO) to traverse the composite tree, going deep before going wide.
  */
-export class ListIterator implements Iterator {
-  private current: number;
+export class LazyDepthFirstSearchIterator implements Iterator {
   protected collection: Box;
+  private lifoStack: Array<Component>;
 
   public constructor(collection: Box) {
-    this.current = 0;
     this.collection = collection;
+    this.buildStack();
+  }
+
+  private buildStack() {
+    this.lifoStack = [...this.collection.getItems()].reverse();
   }
 
   public first() {
-    this.current = 0;
-    return this.collection.getItems()[this.current];
+    this.buildStack();
+    return this.currentItem();
   }
 
   public next() {
-    this.current++;
-    return this.collection.getItems()[this.current];
+    const currentElement = this.lifoStack.pop();
+
+    if (currentElement != null) {
+      const currentElementAsBox = currentElement.getBox();
+      if (currentElementAsBox != 0) {
+        const children = [...currentElementAsBox.getItems()].reverse();
+        this.lifoStack.push(...children);
+      }
+    }
+
+    return currentElement;
   }
 
   public currentItem() {
     if (this.isDone()) {
       throw new IteratorOutOfBoundsError();
     }
-    return this.collection.getItems()[this.current];
+
+    return this.lifoStack[this.lifoStack.length - 1];
   }
 
   public isDone() {
-    const collectionCount = this.collection.getCount();
-
-    // There is nothing in the collection. We have not finished iterating.
-    if (this.current == 0 && collectionCount == 0) {
-      return false;
-    }
-
-    if (this.current >= collectionCount) {
-      return true;
-    }
-    return false;
+    return this.lifoStack.length === 0;
   }
 }
 
@@ -200,8 +199,6 @@ export class ListIterator implements Iterator {
 export class LazyBreadthFirstSearchIterator implements Iterator {
   protected collection: Box;
   private fifoQueue: Array<Component>;
-
-  // https://www.codecademy.com/article/breadth-first-search-bfs-algorithm
 
   public constructor(collection: Box) {
     this.collection = collection;

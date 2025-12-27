@@ -57,6 +57,57 @@ describe("composite with iterator pattern", () => {
       const product = new Product("product");
       assert.strictEqual(product.getIterator() instanceof NullIterator, true);
     });
+
+    test("DFS iterator should report expected node visit pattern", () => {
+      /**
+       * Structure being tested:
+       *
+       *                      📦 Big Box (A)
+       *                          │
+       *            ┌─────────────┼─────────────┐
+       *            │             │             │
+       *      📦 Medium Box (B)  🏷️ Product (C)  🏷️ Product (D)
+       *            │          ($20)        ($20)
+       *            │
+       *      📦 Small Box (E)
+       *            │
+       *       ┌────┴────┐
+       *       │         │
+       *  🏷️ Product (F)  🏷️ Product (G)
+       *     ($20)      ($20)
+       *
+       *  Total: $80 (4 products × $20)
+       */
+
+      const bigBoxA = new Box("A", "depth-first-search");
+      const mediumBoxB = new Box("B", "depth-first-search");
+      const smallBoxE = new Box("E", "depth-first-search");
+
+      const productF = new Product("F");
+      const productG = new Product("G");
+      const productC = new Product("C");
+      const productD = new Product("D");
+
+      smallBoxE.append(productF);
+      smallBoxE.append(productG);
+      mediumBoxB.append(smallBoxE);
+      bigBoxA.append(mediumBoxB);
+      bigBoxA.append(productC);
+      bigBoxA.append(productD);
+
+      const dfsIterator = bigBoxA.getIterator();
+
+      let visitedNodes = "";
+      while (!dfsIterator.isDone()) {
+        const currentItem = dfsIterator.currentItem() as Component;
+        visitedNodes += currentItem.getName() + " ";
+        dfsIterator.next();
+      }
+
+      // DFS pre-order: visits B, then goes deep to E, then F, G, then back to C, D
+      // Note: root (A) is not included, consistent with BFS iterator behavior
+      assert.strictEqual(visitedNodes.trim(), "B E F G C D");
+    });
   });
 
   describe("breadth first search traversal algorithm", () => {
