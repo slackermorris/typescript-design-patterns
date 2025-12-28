@@ -1,8 +1,6 @@
 # 🎨 TypeScript Design Patterns
 
-> A practical exploration of Gang of Four (GoF) design patterns implemented in TypeScript
-
----
+A practical exploration of Gang of Four (GoF) design patterns implemented in TypeScript
 
 ## 🧭 Quick Navigation
 
@@ -16,15 +14,13 @@
 
 ## 🏗️ Structural Patterns
 
-> _Patterns that deal with object composition and relationships_
+Patterns that deal with object composition and relationships
 
 ### 📦 Composite
 
 Compose zero or more similar objects so they can be manipulated as one unified object.
 
 **→ [Read the full guide](./src/structural/composite/README-composite.md)**
-
----
 
 ### 🔗 Composite with Iterator
 
@@ -36,7 +32,7 @@ Combine the Composite pattern with Iterator for powerful tree traversal capabili
 
 ## 🔄 Behavioural Patterns
 
-> _Patterns that focus on communication between objects_
+Patterns that focus on communication between objects
 
 ### 🔁 Iterator
 
@@ -62,9 +58,3 @@ npm test
 
 - [Design Patterns: Elements of Reusable Object-Oriented Software](https://en.wikipedia.org/wiki/Design_Patterns) — _The original GoF book_
 - [Refactoring Guru](https://refactoring.guru/design-patterns) — _Visual pattern explanations_
-
----
-
-<p align="center">
-  <em>Built with 💙 TypeScript</em>
-</p>
