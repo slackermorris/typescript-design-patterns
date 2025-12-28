@@ -47,7 +47,7 @@ The solution: combine the Composite pattern with the Iterator pattern. Let an It
          │ contains                   │ creates
          ▼                            ▼
    Component[]              ┌──────────────────────────────┐
-                            │       ListIterator           │
+                            │       GraphIterator          │
 ┌───────────────────┐       ├──────────────────────────────┤
 │     Product       │       │ - current: number            │
 │    (Primitive)    │       │ - collection: Box            │
@@ -58,7 +58,7 @@ The solution: combine the Composite pattern with the Iterator pattern. Let an It
         │ extends           │ + currentItem(): Component   │
         │                   └──────────────────────────────┘
 ┌───────┴─────────────────┐               △
-│   <<abstract>> Component │               │ implements
+│  <<abstract>> Component │               │ implements
 └─────────────────────────┘               │
                             ┌─────────────┴────────────────┐
                             │    <<interface>> Iterator    │
@@ -82,7 +82,7 @@ The solution: combine the Composite pattern with the Iterator pattern. Let an It
 
 ### Conceptual Object Structure
 
-When a Box calculates its `netPrice`, it delegates traversal to an Iterator. The Iterator walks through children while the Box aggregates results. Each Box creates its own iterator, enabling independent nested traversals. MENTION THAT I MAKE USE OF A BFS AND DFS TRAVERSAL ALGORITHM BECAUSE THE STRUCTURE WE PRODUCE IS GRAPH LIKE, THIS IS A CHARACTERISTIC OF COMPOSITE PATTERNS.
+When a Box calculates its `netPrice`, it delegates traversal to an Iterator. The Iterator walks through children while the Box aggregates results. Because the collection takes the form of a graph (Products in Boxes inside possible Boxes) the mechanism of traversal needs to support a graph-like data structure. This is why I implement both of a depth first search (DFS) and breadth first search (BFS) algorithm.
 
 ```ascii
                     ┌─────────────────────────────────────┐
@@ -94,7 +94,7 @@ When a Box calculates its `netPrice`, it delegates traversal to an Iterator. The
                     └─────────────────┼───────────────────┘      │
                                       │                          │
                               ┌───────┴───────┐            ┌─────▼─────────────┐
-                              ▼               ▼            │   ListIterator    │
+                              ▼               ▼            │   BFSIterator     │
                          ┌─────────┐     ┌─────────┐       │   current: 0      │
                          │ Product │     │ Product │       │   collection: Box │
                          │  ($20)  │     │  ($20)  │       └───────────────────┘
@@ -102,8 +102,8 @@ When a Box calculates its `netPrice`, it delegates traversal to an Iterator. The
 
     Box.netPrice() Execution:
     ┌──────────────────────────────────────────────────────────────────────┐
-    │  1. Box creates ListIterator                                         │
-    │  2. iterator.first() → current = 0                                   │
+    │  1. Box creates BFSIterator                                          │
+    │  2. iterator.first() → first indexed element in graph                │
     │  3. Loop: while !iterator.isDone()                                   │
     │     │  ├─ iterator.currentItem() → Product ($20)                     │
     │     │  ├─ totalNetPrice += 20                                        │
@@ -138,8 +138,6 @@ abstract class Component {
 }
 ```
 
-### Box as Composite + Aggregate
-
 Next, we update the concrete Composite class, Box, to match the Aggregate interface. The design decision prioritises safety over transparency, as outlined in the [Composite pattern](./README-composite.md)—child management methods (`append`, `remove`) are defined where they are meaningful. We rename `add` to `append` to match the Aggregate interface and add a `getIterator` method.
 
 ```typescript
@@ -158,8 +156,6 @@ class Box extends Component implements Aggregate {
 }
 ```
 
-### Using the Iterator Internally
-
 In the standard Iterator pattern, `getIterator` exposes an external iterator for clients. However, exposing the iterator here feels leaky—we only use it internally within the Composite/Aggregate class to calculate `netPrice`. Although not strictly an internal iterator, the Box class creates and consumes its own iterator through the `netPrice` method. This keeps traversal logic encapsulated within the Box[^1]:
 
 ```typescript
@@ -173,7 +169,7 @@ class Box extends Component implements Aggregate {
   public remove(component: Component) {}
 
   public getIterator(): Iterator {
-    return new ListIterator(this);
+    return new LazyBreadthFirstSearchIterator(this);
   }
 
   public netPrice() {
@@ -182,19 +178,33 @@ class Box extends Component implements Aggregate {
     let totalNetPrice = 0;
 
     for (iterator.first(); !iterator.isDone(); iterator.next()) {
-      const nextItem = iterator.currentItem();
-      totalNetPrice += nextItem.netPrice();
+      const nextItem = iterator.currentItem() as Component;
+
+      if (!Boolean(nextItem.getBox())) {
+        totalNetPrice += nextItem.netPrice();
+      }
     }
 
     delete iterator;
+
     return totalNetPrice;
   }
 }
 ```
 
+It is important to highlight that in calculating the total price of items it contains, a Box is completely ignorant of how we are walking through the collection. Its sole responsibility is to aggregate the result as we walk through the collection. When writing code like this, it is important to consider whether the context or scope should be aware of internal details of X.
+
+What do I mean by this? Well, in computing the total price we call this piece of code:
+
+```typescript
+totalNetPrice += nextItem.netPrice();
+```
+
+Should a Box be aware that it has elements in it that have a `netPrice` method? Yes, definitely. It itself is of the same shared class. It makes sense that the Box is aware that elements in its scope have this method exposed. Alternatively, would it make sense for the Iterator to calculate this cost? No, not at all. The Iterator should remain ignorant of the identity of the elements it is handling. Its job is to offer a mechanism to traverse them. If the Iterator handled this logic we would be leaking details of the collections contents, thereby ruining a clean separation of concerns and overall abstraction.
+
 ### Default Iterator: The NullIterator
 
-To maximise the Component interface, we provide a default `getIterator` implementation. The Product class inherits a `NullIterator`—an iterator that's always done. The Box class overrides this to return a real `ListIterator`. Because the iterator deals with accessing children, defining this method on the Component interface is consistent with the design decision we made when constructing the Composite pattern: prioritise maximising the component interface and client transparency for safe operations. There is some tension here that needs to be resolved, see the TODO list.
+To maximise the Component interface, we provide a default `getIterator` implementation. The Product class inherits a `NullIterator`—an iterator that's always done. The Box class overrides this to return a real `LazyBreadthFirstSearchIterator`. Because the iterator deals with accessing children, defining this method on the Component interface is consistent with the design decision we made when constructing the Composite pattern: prioritise maximising the component interface and client transparency for safe operations.
 
 ```typescript
 abstract class Component {
@@ -214,6 +224,10 @@ abstract class Component {
 }
 ```
 
+However, there is some tension between the patterns (Composite, Iterator) root interfaces. Here we have defined the `getIterator` method on the Composite base class. But this is a method already defined on the base Iterator > Aggregate interface. Ideally, the base Composite class would extend or implement the base Iterator interface. But this would require it to include the other methods defined on the Iterator > Aggregate interface, `append` and `remove`, the two child management methods that I explicitly chose not to include on the Composite > Component interface because they are better defined on the composite concrete class where they are meaningfully used: a design decision I have explained elsewhere.
+
+I feel a little strange redefining the `getIterator` method on the Composite class when it really comes from the Iterator interface.
+
 ## Key Principles
 
 - **The Composite becomes the Aggregate**: The container class (Box) implements both Component and Aggregate interfaces.
@@ -223,17 +237,9 @@ abstract class Component {
 ## TODO
 
 - [ ] Add TS generic support
-- [ ] Resolve tension in base classes. Component defines `getIterator`, but so does the Aggregate class. Component should implement Aggregate, but there are methods for managing children that we only want to declare on the class that they are meaningful: the concrete Composite class.
 - [ ] Mention how I had to use an iterator that made sense for the data structure we were using. We are using a graph and therefore it is silly to use a list collection and better to use a traversal algorithm that makes use of the graph model.
-- [ ] What is the difference in recursive and iterative DFS?
-
-there is a lot going on here. a lot of things that I learnt. for the specific data structure I was using I was wrongly trying to use a flat collection
-like an array and support traversal of a data structure that resembled a graph.. I should of thought about what sort of data structure I had because this is coupled to the Iterator and I would have realised that using a list collection iterator instead of a graph collection iterator did not make sense whatsoever.
-
-// https://www.codecademy.com/article/breadth-first-search-bfs-algorithm
-
-from this I will also notice that the implementation for getting the total price in the collection or aggregate did not need to change.. the traversal algorithm
-has changed but we, or the aggregate does not care about how the iterator is performing its traversal.. all it cares about is that we can walk the nodes and intermediate process the results for obtaining the total price of elements below a given composite Box. so, the body logic of "add to total if the element has a price" is appropriate in scope of this class.. the iterator is walking the data structure.. its responsibility is not to call methods on the elements it is walking. good separation of concerns is at play.
+- [ ] Implement everything from scratch again.
+- [ ] How coupled is the Iterator to receiving a nested array?
 
 ## References
 
