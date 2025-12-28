@@ -2,17 +2,16 @@
 
 ## Overview
 
-The Iterator Pattern is useful for traversing elements of a collections (stacks, lists, trees) without exposing the underlying representation when you want to keep separation between the algorithim you are using to traverse and the underlying data structure being traversed. Iterators can encapsulate bulky traversal algorithims neither requiring the client to write them and include them in its business logic or have the collection itself declare these members on it.
+The Iterator Pattern provides a way to traverse elements of a collection (stacks, lists, trees) without exposing the underlying representation. It keeps a clean separation between the traversal algorithm and the data structure being traversed.
 
-It allows iteration over the same collection to happen in parallel because the iterator is isolated and contains its own iteration state. take responsibility for access and traversal out of the list object and put it into an iterator. this allows us to define iterators for different traversal policies without enumerating them all on the List interface ^[1].
+Iterators encapsulate traversal logic that would otherwise clutter client code or bloat the collection class itself. Because each iterator maintains its own traversal state, multiple iterators can traverse the same collection in parallel—each tracking its own position independently[^1].
 
-The Iterator pattern captures these techniques for supporting access and traversal over object structures. It is applicable to composite structures and collections as well. It abstracts the traversal algorithm and shields clients from the internal structure of the objects they traverse. This illustrates how encapsulating the concept that varies helps us gain flexibility and reusability.
-
+The pattern abstracts the traversal algorithm and shields clients from the internal structure of the objects they traverse. This illustrates how encapsulating the concept that varies—here, the mechanism of traversal—helps us gain flexibility and reusability.
 
 ## When to Use
 
-- When the collection you are working with has a complex data structure under the hood and you want to hide its complexity from clients. This approach protects the collection from careless or malicious actions which the client would be able to perform on the collection directly ^[1].
-- When you want to support variations of traversal behaviour (algorithms) of the aggregate.
+- When the collection you are working with has a complex data structure under the hood and you want to hide its complexity from clients. This protects the collection from careless or malicious actions that could occur if the client had direct access[^1].
+- When you want to support variations of traversal behaviour (algorithms) without enumerating them all on the collection interface.
 
 ## Structure
 
@@ -79,43 +78,152 @@ _This scenario is adapted from [Refactoring Guru's Iterator Pattern](https://ref
 
 ## Implementation
 
-The iterator only has access to the data structure, the collection, through methods exposed by the collection class. See an example in how we isolate the current item.
+The implementation involves two main abstractions: the Aggregate (the collection) and the Iterator (the traversal mechanism). The iterator accesses the collection only through methods exposed by the aggregate class, maintaining proper encapsulation.
 
-For this example we have implemeted an _external_ iterator where control of the iteration is managed by the client, in our case the tests.
+### The Aggregate Interface
 
-We define the traversal algorithim inside the concrete class iterator. The iterator stores the state of the iteration. Could the aggregate define the traversal algorithim? Yes. If it is defined in the Iterator then we will need a different Iterator for each algorithim we want. If the traversal algorithim needs to access private variables on the Aggregate then this will break encapsulation of the Aggregate. We sort of do this when we tap the `.getItems` call. 
+The Aggregate class defines the contract for collections that can be iterated. It declares methods for managing collection elements and for creating an iterator:
 
-The Iterator concrete class keeps the concrete class state it is working on, the collection, in state so that it may interact with it for its traversal but importantly it does not have real access to the underlying data structure like, or maybe it does but it really shouldn't so maybe I need to look into this.
+```typescript
+export abstract class Aggregate<T> {
+  public abstract getIterator(): Iterator<T>;
 
-because the concrete implementation of the aggregate handles the collection, it makes sense to declare member functions we expect as part of the Aggregate interface like append and remove. 
+  public abstract append(item: T): void;
 
-the iterator and the aggregate are tightly coupled. 
+  public abstract remove(item: T): void;
+}
+```
 
-the iterator stores the Aggregate or Collection it was created from. 
+Because the concrete implementation of the aggregate handles the collection, it makes sense to declare member functions like `append` and `remove` as part of the Aggregate interface.
 
+### The Iterator Interface
 
+The Iterator interface defines the traversal operations. This implementation uses an _external_ iterator where control of the iteration is managed by the client:
 
+```typescript
+export interface Iterator<T> {
+  first(): T;
+  next(): T;
+  isDone(): boolean;
+  currentItem(): T;
+}
+```
 
-Implement concrete iterator classes for the collections that you want to be traversable with iterators. An iterator object must be linked with a single collection instance. Usually, this link is established via the iterator’s constructor.
+### The Concrete Aggregate: List
 
-Implement the collection interface in your collection classes. The main idea is to provide the client with a shortcut for creating iterators, tailored for a particular collection class. The collection object must pass itself to the iterator’s constructor to establish a link between them.
+The `List` class implements the Aggregate interface, providing storage for items and a factory method for creating iterators:
 
-Go over the client code to replace all of the collection traversal code with the use of iterators. The client fetches a new iterator object each time it needs to iterate over the collection elements.
+```typescript
+export class List<T> extends Aggregate<T> {
+  protected items: Array<T> = [];
 
+  public append(item: T) {
+    this.items.push(item);
+  }
+
+  public remove(item: T) {
+    this.items.splice(this.items.indexOf(item), 1);
+  }
+
+  public getItems(): Array<T> {
+    return this.items;
+  }
+
+  public getCount() {
+    return this.items.length;
+  }
+
+  public getIterator(): Iterator<T> {
+    return new ListIterator(this);
+  }
+}
+```
+
+The `getIterator` method passes `this` to the iterator's constructor, establishing the link between the iterator and its collection.
+
+### The Concrete Iterator: ListIterator
+
+The `ListIterator` maintains its own traversal state via the `current` index. It stores a reference to the collection but accesses elements only through the collection's public interface:
+
+```typescript
+export class ListIterator<T> implements Iterator<T> {
+  private current: number;
+  protected collection: List<T>;
+
+  public constructor(collection: List<T>) {
+    this.current = 0;
+    this.collection = collection;
+  }
+
+  public first() {
+    this.current = 0;
+    return this.collection.getItems()[this.current];
+  }
+
+  public next() {
+    this.current++;
+    return this.collection.getItems()[this.current];
+  }
+
+  public currentItem() {
+    if (this.isDone()) {
+      throw new IteratorOutOfBoundsError();
+    }
+    return this.collection.getItems()[this.current];
+  }
+
+  public isDone() {
+    const collectionCount = this.collection.getCount();
+
+    if (this.current == 0 && collectionCount == 0) {
+      return false;
+    }
+
+    if (this.current >= collectionCount) {
+      return true;
+    }
+    return false;
+  }
+}
+```
+
+### Where to Define the Traversal Algorithm
+
+The traversal algorithm is defined inside the concrete Iterator class. This design choice has implications:
+
+- **If defined in the Iterator**: Each new traversal strategy requires a new Iterator class. This provides flexibility—clients can easily swap iterators without modifying the aggregate.
+- **If defined in the Aggregate**: The aggregate controls traversal, but this may require exposing private variables, breaking encapsulation.
+
+The iterator and the aggregate are tightly coupled—the iterator must understand the aggregate's structure to traverse it. However, the client remains decoupled from both, interacting only through the Iterator interface.
+
+### Client Usage
+
+The client fetches a new iterator object each time it needs to traverse the collection:
+
+```typescript
+const list = new List<string>();
+list.append("A");
+list.append("B");
+list.append("C");
+
+const iterator = list.getIterator();
+
+for (iterator.first(); !iterator.isDone(); iterator.next()) {
+  console.log(iterator.currentItem());
+}
+// Output: A, B, C
+```
 
 ## Key Principles
 
-- **Component classes can usually provide default implementations** of the common operations.
-- **Iterators make it easy to change the traversal algorithim used by an aggregate (data structure)** by simply replacing the iterator instance used.
-- **An Interators traversal interface removes the need to declare an equivalent interface on the Aggregate**.
+- **Aggregates provide default iterator implementations**: The collection class creates iterators tailored to its structure via `getIterator()`.
+- **Iterators make traversal algorithms interchangeable**: Simply replace the iterator instance to change how a collection is traversed.
+- **An Iterator's traversal interface removes the need for equivalent methods on the Aggregate**: The collection doesn't need to expose traversal logic—that's the iterator's job.
 
 ## TODO
 
-- [ ] The current variable for the Iterator should be typed as an index of an Array.
-- [ ] In ListIterator.next, check that the current position does not exceed the length of the collection.
-- [ ] Implement an Iterator that does Depth First Search or Breadth First Search instead of just iterating over a list. 
-- [ ] Update the composite pattern to use an Iterator. Think about using NullIterators. 
-- [ ] Give an illustration of the flexibility of the pattern. Define another iterator. 
+- [ ] The `current` variable for the Iterator should be typed as an index of an Array.
+- [ ] In `ListIterator.next`, check that the current position does not exceed the length of the collection.
 
 ## References
 
